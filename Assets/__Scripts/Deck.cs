@@ -70,7 +70,7 @@ public class Deck : MonoBehaviour {
 		s += " x=" + xmlr.xml ["xml"] [0] ["decorator"] [0].att ("x");
 		s += " y=" + xmlr.xml ["xml"] [0] ["decorator"] [0].att ("y");
 		s += " scale=" + xmlr.xml ["xml"] [0] ["decorator"] [0].att ("scale");
-		print (s);
+		//print (s);
 		
 		//Read decorators for all cards
 		// these are the small numbers/suits in the corners
@@ -235,7 +235,18 @@ public class Deck : MonoBehaviour {
 				tGO.transform.localPosition = Vector3.zero;  // slap it smack dab in the middle
 				tGO.name = "face";
 			}
-			
+
+            tGO = Instantiate(prefabSprite) as GameObject;
+            tSR = tGO.GetComponent<SpriteRenderer>();
+            tSR.sprite = cardBack;
+            tGO.transform.parent = card.transform;
+            tGO.transform.localPosition = Vector3.zero;
+            tSR.sortingOrder = 2;
+            tGO.name = "black";
+            card.back = tGO;
+
+            card.faceUp = false;
+
 			cards.Add (card);
 		} // for all the Cardnames	
 	} // makeCards
