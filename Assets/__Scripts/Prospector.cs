@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 
-
 public class Prospector : MonoBehaviour {
 
 	static public Prospector 	S;

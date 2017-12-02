@@ -5,16 +5,15 @@ using UnityEngine;
 public enum CardState
 {
     drawpile,
-    tableu,
+    tableau,
     target,
     discard
 }
 
-public class CardProspector : Card {
-
+public class CardProspector : Card
+{
     public CardState state = CardState.drawpile;
     public List<CardProspector> hiddenBy = new List<CardProspector>();
     public int layoutID;
     public SlotDef slotDef;
-
 }
