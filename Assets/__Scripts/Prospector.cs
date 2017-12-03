@@ -45,6 +45,18 @@ public class Prospector : MonoBehaviour {
         return (cd);
     }
 
+    CardProspector FindCardByLayoutID(int layoutID)
+    {
+        foreach(CardProspector tCP in tableau)
+        {
+            if (tCP.layoutID == layoutID)
+            {
+                return (tCP);
+            }
+        }
+        return (null);
+    }
+
     void LayoutGame()
     {
         if (layoutAnchor == null)
@@ -72,6 +84,18 @@ public class Prospector : MonoBehaviour {
 
             tableau.Add(cp);
         }
+
+        foreach(CardProspector tCP in tableau)
+        {
+            foreach(int hid in tCP.slotDef.hiddenBy)
+            {
+                cp = FindCardByLayoutID(hid);
+                tCP.hiddenBy.Add(cp);
+            }
+        }
+
+        MoveToTarget(Draw());
+        UpdateDrawPile();
     }
 
     List<CardProspector> ConvertListCardsToListCardProspectors(List<Card> lCD)
@@ -86,4 +110,146 @@ public class Prospector : MonoBehaviour {
         return (lCP);
     }
 
+    public void CardClicked(CardProspector cd)
+    {
+        switch (cd.state)
+        {
+            case CardState.target:
+                break;
+            case CardState.drawpile:
+                MoveToDiscard(target);
+                MoveToTarget(Draw());
+                UpdateDrawPile();
+                break;
+            case CardState.tableau:
+                bool validMatch = true;
+                if (!cd.faceUp)
+                {
+                    validMatch = false;
+                }
+                if (!AdjacentRank(cd, target))
+                {
+                    validMatch = false;
+                }
+                if (!validMatch) return;
+                tableau.Remove(cd);
+                MoveToTarget(cd);
+                SetTableauFaces();
+                break;
+        }
+        CheckForGameOver();
+    }
+
+    void MoveToDiscard(CardProspector cd)
+    {
+        cd.state = CardState.discard;
+        discardPile.Add(cd);
+        cd.transform.parent = layoutAnchor;
+        cd.transform.localPosition = new Vector3(
+            layout.multiplier.x * layout.discardPile.x,
+            layout.multiplier.y * layout.discardPile.y,
+            -layout.discardPile.layerID + 0.5f);
+        cd.faceUp = true;
+        cd.SetSortingLayerName(layout.discardPile.layerName);
+        cd.SetSortOrder(-100 + discardPile.Count);
+    }
+
+    void MoveToTarget(CardProspector cd)
+    {
+        if (target != null) MoveToDiscard(target);
+        target = cd;
+        cd.state = CardState.target;
+        cd.transform.parent = layoutAnchor;
+        cd.transform.localPosition = new Vector3(
+            layout.multiplier.x * layout.discardPile.x,
+            layout.multiplier.y * layout.discardPile.y,
+            -layout.discardPile.layerID);
+        cd.faceUp = true;
+        cd.SetSortingLayerName(layout.discardPile.layerName);
+        cd.SetSortOrder(0);
+    }
+
+    void UpdateDrawPile()
+    {
+        CardProspector cd;
+        for(int i=0; i < drawPile.Count; i++)
+        {
+            cd = drawPile[i];
+            cd.transform.parent = layoutAnchor;
+            Vector2 dpStagger = layout.drawPile.stagger;
+            cd.transform.localPosition = new Vector3(
+                layout.multiplier.x * (layout.drawPile.x + i * dpStagger.x),
+                layout.multiplier.y * (layout.drawPile.y + i * dpStagger.y),
+                -layout.drawPile.layerID + 0.1f * i);
+            cd.faceUp = false;
+            cd.state = CardState.drawpile;
+            cd.SetSortingLayerName(layout.drawPile.layerName);
+            cd.SetSortOrder(-10 * i);
+        }
+    }
+
+    public bool AdjacentRank(CardProspector c0,CardProspector c1)
+    {
+        if (!c0.faceUp || !c1.faceUp) return (false);
+
+        if (Mathf.Abs(c0.rank - c1.rank) == 1)
+        {
+            return (true);
+        }
+        if (c0.rank == 1 && c1.rank == 13) return (true);
+        if (c0.rank == 13 && c1.rank == 1) return (true);
+
+        return (false);
+    }
+
+    void SetTableauFaces()
+    {
+        foreach(CardProspector cd in tableau)
+        {
+            bool fup = true;
+            foreach(CardProspector cover in cd.hiddenBy)
+            {
+                if (cover.state == CardState.tableau)
+                {
+                    fup = false;
+                }
+            }
+            cd.faceUp = fup;
+        }
+    }
+
+    void CheckForGameOver()
+    {
+        if (tableau.Count == 0)
+        {
+            GameOver(true);
+            return;
+        }
+
+        if (drawPile.Count > 0)
+        {
+            return;
+        }
+
+        foreach(CardProspector cd in tableau)
+        {
+            if (AdjacentRank(cd, target))
+            {
+                return;
+            }
+        }
+    }
+
+    void GameOver(bool won)
+    {
+        if (won)
+        {
+            print("Game Over. You Won! :)");
+        }
+        else
+        {
+            print("Game Over. You Lost. :(");
+        }
+        Application.LoadLevel("__Prospector_Scene_0");
+    }
 }
